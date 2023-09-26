@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
+    "contentVersion": "1.0.0.1",
     "metadata": {},
     "parameters": {
       "storNamePrefix": {
@@ -9,7 +9,34 @@
         "maxLength": 18,
         "defaultValue": "etrzstor",
         "metadata": {
-          "description": "The Storage Account name should be no longer than 24 characters"
+          "description": "The Storage Account name should be no longer than 24 characters, but the unique suffix with 13 characters is added, so you may specify up to 18 characters."
+        }
+      },
+      "IPaddrNamePrefix": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 77,
+        "defaultValue": "etrzIPaddr",
+        "metadata": {
+          "descritption": "The public IP address name should be no longer than 80 characters, but the unique suffix with 13 characters is added, so you may specify up to 77 characters."
+        }
+      },
+      "vNetNamePrefix": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 51,
+        "defaultValue": "etrzvNet",
+        "metadata": {
+          "description": "The virtual network name should be no longer than 64 characters, but the unique suffix with 13 characters is added, so you may specify up to 51 characters."
+        }
+      },
+      "NicNamePrefix": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 67,
+        "defaultValue": "etrzNic",
+        "metadata": {
+          "description": "The network interface name should be no longer than 80 characters, but the unique suffix with 13 characters is added, so you may specify up to 67 characters."
         }
       }
     },
@@ -21,7 +48,7 @@
         "type": "Microsoft.Storage/storageAccounts",
         "apiVersion": "2021-09-01",
         "name": "[toLower(concat(parameters('storNamePrefix'),variables('dplmntId')))]",
-        "location": "West Europe",
+        "location": "[resourceGroup().location]",
         "sku": {
           "name": "Standard_LRS"
         },
@@ -29,6 +56,66 @@
         "properties": {
           "supportsHttpsTrafficOnly": true
         }
+      },
+      {
+        "type": "Microsoft.Network/publicIPAddresses",
+        "apiVersion": "2023-04-01",
+        "name": "[concat(parameters('IPaddrNamePrefix'),variables('dplmntId'))]",
+        "location": "[resourceGroup().location]",
+        "sku": {
+          "name": "Basic"
+        },
+        "properties": {
+          "publicIPAllocationMethod": "Static",
+          "dnsSettings": {
+            "domainNameLabel": "placeholder"
+          }
+        }
+      },
+      {
+        "type": "Microsoft.Network/virtualNetworks",
+        "apiVersion": "2023-04-01",
+        "name": "[concat(parameters('vNetNamePrefix'),variables('dplmntId'))]",
+        "location": "[resourceGroup().location]",
+        "properties": {
+          "addressSpace": {
+            "addressPrefixes": ["192.168.0.0/16"]
+          },
+          "subnets": [
+            {
+              "name": "mySubnet",
+              "properties": {
+                "addressPrefix": "192.168.1.0/24"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2023-04-01",
+        "name": "[concat(parameters('NicNamePrefix'),variables('dplmntId'))]",
+        "location": "[resourceGroup().location]",
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig",
+              "properties": {
+                "privateIPAllocationMethod": "Dynamic",
+                "publicIPAddress": {
+                  "id": "[resourceId('Microsoft.Network/publicIPAddress', concat(parameters('IPaddrNamePrefix'),variables('dplmntId')))]"
+                },
+                "subnet": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(parameters('vNetNamePrefix'),variables('dplmntId')), 'mySubnet')]"
+                }
+              }
+            }
+          ]
+        },
+        "dependsOn": [
+          "[resourceId('Microsoft.Network/publicIPAddress', concat(parameters('IPaddrNamePrefix'),variables('dplmntId')))]",
+          "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(parameters('vNetNamePrefix'),variables('dplmntId')), 'mySubnet')]"
+        ]
       }
     ]
   }
