@@ -19,5 +19,5 @@ steps:
     resourceGroupName: 'Testgroup1'
     location: 'Poland Central'
     templateLocation: 'URL of the file'
-    csmFileLink: 'https://github.com/eTagak/AzureDevOps/blob/80d165a1bf63fac7c199c72a6c7009652a49883b/azuredeploy.json'
+    csmFileLink: 'https://github.com/eTagak/AzureDevOps/blob/80d165a1bf63fac7c199c72a6c7009652a49883b/azuredeploy.jsohttps://github.com/eTagak/AzureDevOps/blob/779efd1d2231c972e591d806d73ceed1473c5511/azuredeploy.json'
     deploymentMode: 'Incremental'
